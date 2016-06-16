@@ -50,6 +50,7 @@ class Worker(parent: ActorRef) extends Actor with ActorLogging {
 
     case Job(job) ⇒
       log.info("Sorry I'm working.")
+      // TODO Append back to redis
 
     case Worker.JobSuccess(job) ⇒
       log.info("Work succesfully done by Worker Exec")

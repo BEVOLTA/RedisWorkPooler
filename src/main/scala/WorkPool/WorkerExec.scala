@@ -19,8 +19,8 @@ class WorkerExec(parent: ActorRef) extends Actor with ActorLogging {
 
   override def receive = {
     case WorkPool.QueueManager.Job(job) ⇒
-      Thread.sleep(500L)
       log.info("Worker Exec is working")
+      Thread.sleep(10000L)
       parent ! WorkPool.Worker.JobSuccess(job)
   }
 }

@@ -58,7 +58,9 @@ class QueueManager(redisConf: RedisConfig, redis: RedisClient, blockingClient: R
     //TODO Append the remaining in processing Queue to Job Queue
   }
 
-  override def receive = {
+  override def receive =  baseReceive
+
+  def baseReceive: Receive = {
 
     case NeedWork(actor) ⇒
       log.info("Worker Needs Work")
@@ -72,11 +74,13 @@ class QueueManager(redisConf: RedisConfig, redis: RedisClient, blockingClient: R
       broadcastHasWork()
 
     case JobFailure(job, error) ⇒
-      /*
-      blockingClient.brpoplpush(processingQueueName, errorQueueName) // TODO Sorted Set for errorQueueName not List
-      sender() ! Removed(job)
-      */
+    /*
+    blockingClient.brpoplpush(processingQueueName, errorQueueName) // TODO Sorted Set for errorQueueName not List
+    sender() ! Removed(job)
+    */
   }
+
+  def customReceive: Receive = PartialFunction.empty
 
 
   def trySendNextJob(actorRef: ActorRef): Future[Unit] = {
@@ -98,7 +102,7 @@ class QueueManager(redisConf: RedisConfig, redis: RedisClient, blockingClient: R
         router.route(Broadcast(HasWork), this.self)
       case _ ⇒
         log.info("No more job")
-        context.system.scheduler.scheduleOnce(1 seconds, self, CheckHasJob)
+        context.system.scheduler.scheduleOnce(0.5 seconds, self, CheckHasJob)
     }
   }
 
