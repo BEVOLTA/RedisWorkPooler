@@ -23,7 +23,7 @@ object App {
       processingQueueName = "processing",
       jobQueueName = "jobs",
       errorQueueName = "error",
-      numberOfWorkers = 4
+      numberOfWorkers = 12
     )
     val redis2 = RedisConfig(
       port = 32769,
@@ -31,7 +31,7 @@ object App {
       processingQueueName = "processing1",
       jobQueueName = "jobs1",
       errorQueueName = "error",
-      numberOfWorkers = 4
+      numberOfWorkers = 12
     )
 
     val queue1 =  new ExampleRedisQueue(redis1).run
@@ -49,7 +49,6 @@ object App {
     override def receive = {
       case WorkPool.QueueManager.Job(job) ⇒
         log.info("TimeCalculator is working")
-        Thread.sleep(1L)
         parent ! WorkPool.Worker.JobSuccess(job)
     }
   }
@@ -62,8 +61,15 @@ object App {
     override val workExecutor = context.watch(context.system.actorOf(ExampleCalculator.props(self)))
   }
 
-  /*object Queue{
-    def props(parent: ActorRef) = Props(classOf[Queue], parent)
+  object Queue{
+    def props(
+      redis: RedisConfig,
+      redisClient: RedisClient,
+      redisBlockingClient: RedisBlockingClient
+    ) = Props(classOf[Queue],
+      redis: RedisConfig,
+      redisClient: RedisClient,
+      redisBlockingClient: RedisBlockingClient)
   }
 
   class Queue(
@@ -76,7 +82,7 @@ object App {
     redisBlockingClient: RedisBlockingClient
   ) {
 
-  }*/
+  }
 
   class ExampleRedisQueue(override val redis: RedisConfig)(implicit master: ActorSystem)  extends RedisQueue(redis: RedisConfig){
 
@@ -84,7 +90,7 @@ object App {
     override def run = {
       val redisClient = RedisClient(port = redis.port, host = redis.host)
       val blockingRedisClient = RedisBlockingClient(port = redis.port, host = redis.host)
-      val queue = master.actorOf(QueueManager.props(redis, redisClient, blockingRedisClient))
+      val queue = master.actorOf(Queue.props(redis, redisClient, blockingRedisClient))
     }
   }
 
